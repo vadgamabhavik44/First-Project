@@ -50,7 +50,7 @@ Server Configuration steps
 -->>curl -L -O http://downloads.sourceforge.net/project/nagios/nrpe-2.x/nrpe-2.15/nrpe-2.15.tar.gz
 -->>tar xvf nrpe-*.tar.gz
 -->>cd nrpe-*
--->>./configure --enable-command-args --with-nagios-user=nagios --with-nagios-group=nagcmd --with-ssl=usr/bin/openssl --with-ssl-lib=/usr/lib64
+-->>./configure --enable-command-args --with-nagios-user=nagios --with-nagios-group=nagios --with-ssl=usr/bin/openssl --with-ssl-lib=/usr/lib64
 -->>make all
 -->>make install
 -->>make install-xinetd
