@@ -1,0 +1,160 @@
+Nagios system monitoring tool.
+Server Configuration steps
+
+**Install LAMP
+-->>yum install httpd -y
+-->>systemctl start httpd
+-->>systemctl enable httpd
+
+**Install MySQL(MariaDB)
+-->>yum install mariadb mariadb-server -y
+-->>systemctl start mariadb
+-->>systemctl enable mariadb
+-->>mysql_secure_installation
+
+**Install PHP
+-->>yum install php php-mysql -yum
+-->>systemctl restart httpd
+
+**Install Nagios 4
+-->>yum install gcc glibc glibc-common gd gd-devel make net-snmp openssl-devel xinetd unzip -y
+-->>useradd nagios
+-->>groupadd nagcmd
+-->>usermod -a -G nagcmd nagios
+
+**Install Nagios Core
+-->>cd ~
+-->>curl -L -O https://assets.nagios.com/downloads/nagioscore/releases/nagios-4.1.1.tar.gz
+-->>tar xvf nagios-*.tar.gz
+-->>cd nagios-*
+-->>./configure --with-command-group=nagcmd
+-->>make all
+-->>make install
+-->>make install-commandmode
+-->>make install-init
+-->>make install-config
+-->>make install-webconf
+-->>usermod -G nagcmd apache
+
+**Install Nagios Plugins
+-->>cd ~
+-->>curl -L -O http://nagios-plugins.org/download/nagios-plugins-2.1.1.tar.gz
+-->>tar xvf nagios-plugins-*.tar.gz
+-->>cd nagios-plugins-*
+-->>./configure --with-nagios-user=nagios --with-nagios-group=nagcmd --with-openssl
+-->>make
+-->>make install
+
+**Install NRPE
+-->>cd ~
+-->>curl -L -O http://downloads.sourceforge.net/project/nagios/nrpe-2.x/nrpe-2.15/nrpe-2.15.tar.gz
+-->>tar xvf nrpe-*.tar.gz
+-->>cd nrpe-*
+-->>./configure --enable-command-args --with-nagios-user=nagios --with-nagios-group=nagcmd --with-ssl=usr/bin/openssl --with-ssl-lib=/usr/lib64
+-->>make all
+-->>make install
+-->>make install-xinetd
+-->>make install-daemon-config
+-->>vim /etc/xinetd.d/nrpe
+    Modify the only_from line by server IP
+-->>systemctl restart xinetd
+
+**Configure Nagios
+-->>vim /usr/local/nagios/etc/nagios.cfg
+    uncomment this line by deleting the #:
+	#cfg_dir=/usr/local/nagios/etc/servers
+-->>mkdir /usr/local/nagios/etc/servers
+
+**Configure NAgios Contacts
+-->>vim /usr/local/nagios/etc/objects/contacts.cfg
+    email                           nagios@localhost        ; <<***** CHANGE THIS TO YOUR EMAIL ADDRESS ******
+
+**Configure Check_nrpe cpmmand
+-->>vim /usr/local/nagios/etc/object/command.cfg
+     Add the following to the end of the file:
+
+	 define command{
+        command_name check_nrpe
+        command_line $USER1$/check_nrpe -H $HOSTADDRESS$ -c $ARG1$
+     }
+
+**Configure Apache
+-->>htpasswd -c /usr/local/nagios/etc/htpasswd.users nagiosadmin
+-->>systemctl daemon-reload
+-->>systemctl start nagios
+-->>systemctl restart httpd
+-->>systemctl enanle nagios
+-->>firewall-cmd --permanent --add-serivce=http
+-->>firewall-cmd --reload
+
+
+Client Side Configuration
+**Monitor a CentOS 7 Host with NRPE 
+-->>yum install epel-release -y
+-->>yum install nrpe nagios-plugins-all -y
+-->>vi /etc/nagios/nrpe.cfg
+	allowed_hosts=192.168.100.124 (Pull server IP)
+-->>systemctl start nrpe.service
+-->>systemctl enable nrpe.service
+
+Server Side Configuration
+**Add Host to Nagios Configuration
+-->>vi /usr/local/nagios/etc/servers/nagiosclients.cfg
+define host {
+        use                             linux-server
+        host_name                       client01.nagios.com
+        alias                           My first Apache server
+        address                         192.168.100.93
+        max_check_attempts              5
+        check_period                    24x7
+        notification_interval           30
+        notification_period             24x7
+}
+
+define service {
+        use                             generic-service
+        host_name                       yourhost
+        service_description             PING
+        check_command                   check_ping!100.0,20%!500.0,60%
+}
+
+-->>systemctl reload nagios.service
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
