@@ -1,0 +1,5 @@
+OpenLDAP Server Configuration on CentOS 7
+**Prerequisites
+-->>/etc/hosts
+	192.168.1.10 server.vadgama.com server
+    192.168.1.20 client.vadgama.com client
