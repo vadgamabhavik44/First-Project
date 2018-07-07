@@ -1,5 +1,110 @@
 OpenLDAP Server Configuration on CentOS 7
-**Prerequisites
--->>/etc/hosts
-	192.168.1.10 server.vadgama.com server
-    192.168.1.20 client.vadgama.com client
+**Install OpenLdap Packages
+-->>yum -y install openldap compat-openldap openldap-clients openldap-servers openldap-servers-sql openldap-devel
+-->>systemctl start slapd
+-->>systemctl enable slapd
+-->>netstat -antup | grep -i 389
+
+**Setup Ldap Admin Password
+-->>slappasswd -h {SSHA} -s Here type password for ldap master
+    Save Output from above command
+	
+**Configure OpenLdap Server
+-->>cd /etc/opeldap/slapd.d/
+-->vim db.ldif
+dn: olcDatabase={2}hdb,cn=config
+changetype: modify
+replace: olcSuffix
+olcSuffix: dc=itzgeek,dc=local
+
+dn: olcDatabase={2}hdb,cn=config
+changetype: modify
+replace: olcRootDN
+olcRootDN: cn=ldapadm,dc=itzgeek,dc=local
+
+dn: olcDatabase={2}hdb,cn=config
+changetype: modify
+replace: olcRootPW
+olcRootPW: {SSHA}d/thexcQUuSfe3rx3gRaEhHpNJ52N8D3
+
+-->>ldapmodify -Y EXTERNAL  -H ldapi:/// -f db.ldif
+-->>vim monitor.ldif
+dn: olcDatabase={1}monitor,cn=config
+changetype: modify
+replace: olcAccess
+olcAccess: {0}to * by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external, cn=auth" read by dn.base="cn=ldapadm,dc=itzgeek,dc=local" read by * none
+
+-->>ldapmodify -Y EXTERNAL  -H ldapi:/// -f monitor.ldif
+
+**Set up Ldap Database
+-->>cp /usr/share/openldap-servers/DB_CONFIG.example /var/lib/ldap/DB_CONFIG
+-->>chown ldap:ldap /var/lib/ldap/*
+-->>ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/cosine.ldif
+-->>ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/nis.ldif 
+-->>ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/inetorgperson.ldif
+-->>vim base.ldif
+dn: dc=itzgeek,dc=local
+dc: itzgeek
+objectClass: top
+objectClass: domain
+
+dn: cn=ldapadm ,dc=itzgeek,dc=local
+objectClass: organizationalRole
+cn: ldapadm
+description: LDAP Manager
+
+dn: ou=People,dc=itzgeek,dc=local
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Group,dc=itzgeek,dc=local
+objectClass: organizationalUnit
+ou: Group
+
+-->>ldapadd -x -W -D "cn=ldapadm,dc=itzgeek,dc=local" -f base.ldif
+
+**Create Ldap User
+-->>vim bhavik.ldif
+dn: uid=bhavik,ou=People,dc=itzgeek,dc=local
+objectClass: top
+objectClass: account
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: bhavik
+uid: bhavik
+uidNumber: 9999
+gidNumber: 100
+homeDirectory: /home/bhavik
+loginShell: /bin/bash
+gecos: Bhavik [Admin (at) ITzGeek]
+userPassword: {crypt}x
+shadowLastChange: 17058
+shadowMin: 0
+shadowMax: 99999
+shadowWarning: 7
+
+-->>ldapadd -x -W -D "cn=ldapadm,dc=itzgeek,dc=local" -f raj.ldif
+-->>ldappasswd -s password123 -W -D "cn=ldapadm,dc=itzgeek,dc=local" -x "uid=raj,ou=People,dc=itzgeek,dc=local"
+-->>ldapsearch -x cn=bhavik -b dc=itzgeek,dc=local
+
+**Firewall
+-->>firewall-cmd --permanent --add-service=ldap
+-->>firewall-cmd --reload
+
+**Enable Ldap Logging
+-->>vi /etc/rsyslog.conf
+   local4.* /var/log/ldap.log  (Add this line in file)
+ 
+-->>systemctl restart rsyslog
+
+
+
+
+
+
+
+
+
+
+
+
