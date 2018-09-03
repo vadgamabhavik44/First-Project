@@ -95,7 +95,7 @@ shadowWarning: 7
 -->>vi /etc/rsyslog.conf
    local4.* /var/log/ldap.log  (Add this line in file)
  
--->>systemctl restart rsyslog
+-->>systemctl restart rsyslog	
 
 
 

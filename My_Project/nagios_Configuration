@@ -13,7 +13,7 @@ Server Configuration steps
 -->>mysql_secure_installation
 
 **Install PHP
--->>yum install php php-mysql -yum
+-->>yum install php php-mysql -y
 -->>systemctl restart httpd
 
 **Install Nagios 4

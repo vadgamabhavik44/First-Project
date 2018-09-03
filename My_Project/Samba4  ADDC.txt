@@ -1,1 +1,135 @@
+Install Samba4 Active Directory on CentOS 7
+Note: while restoring Samba4 from backup:IP Address,OS version and samba version must be same as current samba4 setup.
+Disable selinux and configure firewall ports then follow below steps 
+
+
+FQDN=sambapdc.cignexdatamatics.com
+
 -->>yum update -y
+
+-->>hostnamectl set-hostname sambapdc.cignexdatamatics.com
+
+-->vim /etc/hosts
+192.168.100.88	sambapdc.cignexdatamatics.com	sambapdc
+
+-->>vim /etc/sysconfig/network
+HOSTNAME=sambapdc
+
+-->>disable selinux and firewall
+-->>reboot
+
+-->>yum install libacl-devel e2fsprogs-devel gnutls-devel readline-devel python-devel gdb pkgconfig gcc libblkid-devel zlib-devel setroubleshoot-server setroubleshoot-plugins policycoreutils-python libsemanage-python setools-libs-python setools-libs popt-devel libpcap-devel sqlite-devel libidn-devel libxml2-devel libacl-devel libsepol-devel libattr-devel keyutils-libs-devel cyrus-sasl-devel krb5-workstation perl openldap-devel bind bind-sdb attr bind-utils docbook-style-xsl gcc gdb krb5-workstation libsemanage-python libxslt perl perl-ExtUtils-MakeMaker 
+       perl-Parse-Yapp perl-Test-Base pkgconfig policycoreutils-python python-crypto gnutls-devel libattr-devel keyutils-libs-devel libacl-devel libaio-devel libblkid-devel libxml2-devel openldap-devel pam-devel popt-devel python-devel readline-devel zlib-devel systemd-devel
+
+-->>cd /opt
+-->>wget https://ftp.samba.org/pub/samba/stable/samba-4.1.6.tar.gz
+-->>tar -zxvf samba-4.1.6.tar.gz
+-->>cd samba-4-1-6
+-->>./configure.developer
+-->>make
+-->>make install
+-->>/usr/local/samba/bin/samba-tool domain provision --use-rfc2307 --interactive
+
+# Starting Samba4
+-->>/usr/local/samba/sbin/samba
+-->>pkill samba
+
+-->>vi /etc/rc.d/init.d/samba4
+#! /bin/bash
+#
+# samba4 Bring up/down samba4 service
+#
+# chkconfig: - 90 10
+# description: Activates/Deactivates all samba4 interfaces configured to \
+# start at boot time.
+#
+### BEGIN INIT INFO
+# Provides:
+# Should-Start:
+# Short-Description: Bring up/down samba4
+# Description: Bring up/down samba4
+### END INIT INFO
+# Source function library.
+. /etc/init.d/functions
+
+if [ -f /etc/sysconfig/samba4 ]; then
+. /etc/sysconfig/samba4
+fi
+
+CWD=$(pwd)
+prog="samba4"
+
+start() {
+# Attach irda device
+echo -n $"Starting $prog: "
+/usr/local/samba/sbin/samba
+sleep 2
+if ps ax | grep -v "grep" | grep -q /samba/sbin/samba ; then success $"samba4 startup"; else failure $"samba4 startup"; fi
+echo
+}
+stop() {
+# Stop service.
+echo -n $"Shutting down $prog: "
+killall samba
+sleep 2
+if ps ax | grep -v "grep" | grep -q /samba/sbin/samba ; then failure $"samba4 shutdown"; else success $"samba4 shutdown"; fi
+echo
+}
+status() {
+/usr/local/samba/sbin/samba --show-build
+}
+
+# See how we were called.
+case "$1" in
+start)
+start
+;;
+stop)
+stop
+;;
+status)
+status irattach
+;;
+restart|reload)
+stop
+start
+;;
+*)
+echo $"Usage: $0 {start|stop|restart|status}"
+exit 1
+esac
+
+exit 0
+
+-->>chmod 755 /etc/rc.d/init.d/samba4
+-->>chmod +x /etc/rc.d/init.d/samba4
+-->>ln -s /etc/rc.d/init.d/samba4 /etc/rc3.d/S80samba4
+-->>chkconfig --add samba4
+-->>chkconfig samba4 on
+-->>systemctl start samba4
+
+-->>/usr/local/samba/bin/smbclient //localhost/netlogon -Uadministrator%VerySecret123
+
+Once samba4 successfully running you can restore backup as follow.
+
+-->> service samba4 stop
+
+-->> get samba restore backup files and copy in /opt
+
+-->>untar restore file on opt
+
+-->>rm -rf /usr/local/samba/etc
+
+-->>rm -rf /usr/local/samba/private
+
+-->>rm -rf /usr/local/samba/var/locks/sysvol
+
+-->>cp -r /opt/backups/etc /usr/local/samba/
+
+-->>cp -t /opt/backups/private /usr/local/samba/
+
+-->>cp -r /opt/backups/var/locks/sysvol /usr/local/samba/var/locks/sysvol
+
+-->>service samba start
+
+-->> now you can check bakup by testing samba.
