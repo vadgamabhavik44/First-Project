@@ -23,3 +23,26 @@ Seeing whats inside
 -->>select user, host, password from user;
 -->>select * from user;
 -->>select user, super_priv from user;
+
+**************
+Create import and insert database.
+-->>create database test;
+-->>use test;
+-->>CREATE TABLE IF NOT EXISTS testtable (
+    equip_id int(5) NOT NULL AUTO_INCREMENT,
+    type varchar(50) DEFAULT NULL,
+    install_date DATE DEFAULT NULL,
+    color varchar(20) DEFAULT NULL,
+    working bool DEFAULT NULL,
+    location varchar(250) DEFAULT NULL,
+    PRIMARY KEY(equip_id)
+    );
+-->>exit
+-->>mysqldump -u root -p test > testbackup.sql
+-->>mysql -u root -p
+-->>drop database test;
+-->>show database;
+-->> create database test;
+-->>use test;
+-->>source testbackup.sql or mysql -u root -p test < testbackup.sql
+
