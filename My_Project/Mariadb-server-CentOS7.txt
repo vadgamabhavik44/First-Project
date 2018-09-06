@@ -1,0 +1,25 @@
+Install Mariabd
+-->>yum install mariadb-server mariadb -y
+-->>systemctl start mariadb
+-->>systemctl enable mariadb
+-->>mysql_secure_installation
+-->>mysql -u root -p
+
+*************
+Reset root password
+-->>mysqld_safe --skip-grant-tables --skip-networking &
+-->>mysql -u root
+-->>use mysql;
+-->>update user set password=PASSWORD("new-password") where user='root';
+-->>flush privileges;
+-->>exit
+
+*************
+Seeing whats inside
+-->>show databases;
+-->>use mysql;
+-->>show tables;
+-->>describe user;
+-->>select user, host, password from user;
+-->>select * from user;
+-->>select user, super_priv from user;
